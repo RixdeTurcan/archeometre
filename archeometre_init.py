@@ -9,6 +9,8 @@ def initArcheometre(self):
 		name TEXT,
 		sizeX INTEGER,
 		sizeY INTEGER,
+		posXView INTEGER,
+		posYView INTEGER,
 		urlBackground TEXT,
 		pixelSize REAL,
 		startDate TEXT,
