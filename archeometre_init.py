@@ -15,7 +15,8 @@ def initArcheometre(self):
 		pixelSize REAL,
 		startDate TEXT,
 		viewTimes TEXT,
-		magicFieldInit TEXT
+		magicFieldInit TEXT,
+		deleted INTEGER
 	)
 	""")
 	self.executeRequest("""
@@ -24,14 +25,14 @@ def initArcheometre(self):
 		x INTEGER,
 		y INTEGER,
 		time INTEGER,
-		data TEXT			
+		data TEXT
 	)
 	""")
 	self.executeRequest("""
 	CREATE TABLE IF NOT EXISTS Attractor(
 		id INTEGER PRIMARY KEY AUTOINCREMENT UNIQUE,
 		mapId INTEGER,
-		data TEXT			
+		data TEXT
 	)
 	""")
 	self.executeRequest("""
@@ -41,7 +42,7 @@ def initArcheometre(self):
 		startTime INTEGER,
 		peakTime INTEGER,
 		endTime INTEGER,
-		data TEXT			
+		data TEXT
 	)
 	""")
 	self.executeRequest("""
@@ -57,13 +58,13 @@ def initArcheometre(self):
 		name TEXT
 	)
 	""")
-	
+
 	self.executeRequest(""" INSERT INTO Element(name) VALUES("Feu") """)
 	self.executeRequest(""" INSERT INTO Element(name) VALUES("Terre") """)
 	self.executeRequest(""" INSERT INTO Element(name) VALUES("Lune") """)
 	self.executeRequest(""" INSERT INTO Element(name) VALUES("Eau") """)
 	self.executeRequest(""" INSERT INTO Element(name) VALUES("Air") """)
-	
+
 	idFeu = self.executeRequest(""" SELECT id FROM Element WHERE name="Feu" """)[0][0]
 	idTerre = self.executeRequest(""" SELECT id FROM Element WHERE name="Terre" """)[0][0]
 	idLune = self.executeRequest(""" SELECT id FROM Element WHERE name="Lune" """)[0][0]
@@ -110,7 +111,7 @@ def initArcheometre(self):
 	self.executeRequest(""" INSERT INTO Domain(name, elementId) VALUES("Lion", """+str(idFeu)+""") """)
 	self.executeRequest(""" INSERT INTO Domain(name, elementId) VALUES("Taureau", """+str(idFeu)+""") """)
 	self.executeRequest(""" INSERT INTO Domain(name, elementId) VALUES("Dragon", """+str(idFeu)+""") """)
-	
+
 	self.executeRequest(""" INSERT INTO Domain(name, elementId) VALUES("Plénitude", """+str(idTerre)+""") """)
 	self.executeRequest(""" INSERT INTO Domain(name, elementId) VALUES("Primordial", """+str(idTerre)+""") """)
 	self.executeRequest(""" INSERT INTO Domain(name, elementId) VALUES("Forme", """+str(idTerre)+""") """)
@@ -154,7 +155,7 @@ def initArcheometre(self):
 	self.executeRequest(""" INSERT INTO Domain(name, elementId) VALUES("Ours", """+str(idTerre)+""") """)
 	self.executeRequest(""" INSERT INTO Domain(name, elementId) VALUES("Taupe", """+str(idTerre)+""") """)
 	self.executeRequest(""" INSERT INTO Domain(name, elementId) VALUES("Darfadet", """+str(idTerre)+""") """)
-	
+
 	self.executeRequest(""" INSERT INTO Domain(name, elementId) VALUES("Chaos", """+str(idLune)+""") """)
 	self.executeRequest(""" INSERT INTO Domain(name, elementId) VALUES("Sublimation", """+str(idLune)+""") """)
 	self.executeRequest(""" INSERT INTO Domain(name, elementId) VALUES("Ambiguïté", """+str(idLune)+""") """)
@@ -200,7 +201,7 @@ def initArcheometre(self):
 	self.executeRequest(""" INSERT INTO Domain(name, elementId) VALUES("Chat", """+str(idLune)+""") """)
 	self.executeRequest(""" INSERT INTO Domain(name, elementId) VALUES("Caméléon", """+str(idLune)+""") """)
 	self.executeRequest(""" INSERT INTO Domain(name, elementId) VALUES("Loup", """+str(idLune)+""") """)
-	
+
 	self.executeRequest(""" INSERT INTO Domain(name, elementId) VALUES("Harmonie", """+str(idEau)+""") """)
 	self.executeRequest(""" INSERT INTO Domain(name, elementId) VALUES("Changement", """+str(idEau)+""") """)
 	self.executeRequest(""" INSERT INTO Domain(name, elementId) VALUES("Oubli", """+str(idEau)+""") """)
@@ -242,7 +243,7 @@ def initArcheometre(self):
 	self.executeRequest(""" INSERT INTO Domain(name, elementId) VALUES("Baleine", """+str(idEau)+""") """)
 	self.executeRequest(""" INSERT INTO Domain(name, elementId) VALUES("Pieuvre", """+str(idEau)+""") """)
 	self.executeRequest(""" INSERT INTO Domain(name, elementId) VALUES("Sirène", """+str(idEau)+""") """)
-	
+
 	self.executeRequest(""" INSERT INTO Domain(name, elementId) VALUES("Liberté", """+str(idAir)+""") """)
 	self.executeRequest(""" INSERT INTO Domain(name, elementId) VALUES("Mouvement", """+str(idAir)+""") """)
 	self.executeRequest(""" INSERT INTO Domain(name, elementId) VALUES("Transgression", """+str(idAir)+""") """)
@@ -290,36 +291,36 @@ def initArcheometre(self):
 	self.executeRequest(""" INSERT INTO Domain(name, elementId) VALUES("Aigle", """+str(idAir)+""") """)
 	self.executeRequest(""" INSERT INTO Domain(name, elementId) VALUES("Colombe", """+str(idAir)+""") """)
 	self.executeRequest(""" INSERT INTO Domain(name, elementId) VALUES("Hibou", """+str(idAir)+""") """)
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
