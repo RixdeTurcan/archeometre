@@ -10,7 +10,7 @@ class Archeometre:
 			self.db = sqlite3.connect("archeometre.db")
 
 			initArcheometre(self)
-			self.createMap("carte", "fond/carte.png", 200000./1000., "[535, 12, 20, 0]")
+			self.createMap("carte", "fond/carte.png", 20000./1000., "20 décembre 450 à minuit")
 		else:
 			self.db = sqlite3.connect("archeometre.db")
 
@@ -44,6 +44,7 @@ class Archeometre:
 		SELECT sizeX, sizeY, posXView, posYView, urlBackground, pixelSize, startDate, viewtimes, magicFieldInit FROM Map
 		WHERE name=\""""+name+"""\" AND deleted==0
 		""")[0]
+		self.map["name"] = name
 		self.map["sizeX"] = map[0]
 		self.map["sizeY"] = map[1]
 		self.map["posXView"] = map[2]
@@ -59,6 +60,25 @@ class Archeometre:
 		UPDATE Map SET deleted=1 WHERE name=\""""+name+"""\"
 		""")
 
+	def setMapUrl(self, url):
+		self.executeRequest("""
+		UPDATE Map SET urlBackground=\""""+url+"""\" WHERE name=\""""+self.map["name"]+"""\" AND deleted=0
+		""")
+
+	def setPixelSampling(self, size):
+		self.executeRequest("""
+		UPDATE Map SET pixelSize=\""""+size+"""\" WHERE name=\""""+self.map["name"]+"""\" AND deleted=0
+		""")
+
+	def setStartDate(self, date):
+		self.executeRequest("""
+		UPDATE Map SET startDate=\""""+date+"""\" WHERE name=\""""+self.map["name"]+"""\" AND deleted=0
+		""")
+
+	def setViewTimes(self, times):
+		self.executeRequest("""
+		UPDATE Map SET viewtimes=\""""+times+"""\" WHERE name=\""""+self.map["name"]+"""\" AND deleted=0
+		""")
 
 	def getMapList(self):
 		map = self.executeRequest("""

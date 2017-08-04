@@ -22,6 +22,7 @@ class Gui:
 		self.btn = []
 		self.select = []
 		self.inpt = []
+		self.menu = []
 
 		self.gui.init(self.layout)
 
@@ -75,8 +76,8 @@ class Gui:
 			select.add(d[0], d[1])
 
 
-	def addInput(self, x, y, l, onInput=doNothing):
-		self.inpt.append(pgui.Input(size=l))
+	def addInput(self, x, y, l, val="", onInput=doNothing):
+		self.inpt.append(pgui.Input(size=l, value=val))
 
 		self.inpt[-1].connect(pgui.CHANGE, onInput, self.inpt[-1])
 		self.layout.add(self.inpt[-1], x, y)
@@ -84,6 +85,17 @@ class Gui:
 		self.gui.init(self.layout)
 
 		return self.inpt[-1]
+
+	def addMenu(self, x, y, data):
+		self.menu.append(pgui.Menus(data))
+
+		self.layout.add(self.menu[-1], x, y)
+
+		self.gui.init(self.layout)
+
+		return self.menu[-1]
+
+
 
 	def update(self):
 		running = True
