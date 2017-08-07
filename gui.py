@@ -23,30 +23,44 @@ class Gui:
 		self.select = []
 		self.inpt = []
 		self.menu = []
+		self.label = []
 
 		self.gui.init(self.layout)
 
+		self.onMouseDownedMapFunc = doNothing
+		self.onMouseDownedRightMapFunc = doNothing
+		self.mouseDowned = False
+		self.previousDownedPos = []
+		self.buttonPressed = 1
 
+		self.mask = []
+		self.mask.append(pygame.surface.Surface(self.size, pygame.SRCALPHA)) #background image
+		self.mask.append(pygame.surface.Surface(self.size, pygame.SRCALPHA)) #attractor
+		self.mask.append(pygame.surface.Surface(self.size, pygame.SRCALPHA)) #gui
 
 		pygame.display.set_caption("Archeometre")
 		self.screen.fill([0,0,0])
 		pygame.display.flip()
 
-	def drawImageByUrl(self, url, x, y):
+	def onMouseDownedMap(self, func):
+		self.onMouseDownedMapFunc = func
+
+	def onMouseDownedRightMap(self, func):
+		self.onMouseDownedRightMapFunc = func
+
+	def drawImageByUrl(self, url, x, y, maskId=0):
 		carte = pygame.image.load(os.path.join(url))
-		self.drawImage(carte, x, y)
+		self.drawImage(carte, x, y, maskId)
 
-	def drawImage(self, image, x, y):
-		self.screen.blit(image, (x, y))
+	def drawImage(self, image, x, y, maskId=0):
+		self.mask[maskId].blit(image, (x, y))
 
-	def drawRect(self, x, y, dx, dy, w, color):
-		pygame.draw.rect(self.screen, color, [x, y, dx, dy], w)
+	def drawPixel(self, x, y, color, maskId=0):
+		self.mask[maskId].set_at((x,y), color)
 
-	def fillRect(self, x, y, dx, dy, color):
-		self.screen.fill(color, pygame.Rect(x, y, dx, dy))
+	def fillRect(self, x, y, dx, dy, color, maskId=0):
+		self.mask[maskId].fill(color, pygame.Rect(x, y, dx, dy))
 
-	def drawLine(self, x, y, dx, dy, w, color):
-		pygame.draw.line(self.screen, color, [x, y], [x+dx, y+dy], w)
 
 	def addButton(self, x, y, text, onClick=doNothing, paramOnClick=0):
 		self.btn.append(pgui.Button(text))
@@ -95,21 +109,48 @@ class Gui:
 
 		return self.menu[-1]
 
+	def addLabel(self, x, y, text):
+		self.label.append(pgui.Button(text))
+		self.layout.add(self.label[-1], x, y)
+		self.gui.init(self.layout)
 
+		return self.label[-1]
 
 	def update(self):
 		running = True
 
-		self.fillRect(0, 0, 300, 1000, (0,0,0))
-		self.gui.paint(self.screen)
+		self.fillRect(0, 0, 300, 1000, (0,0,0), 2)
+		self.gui.paint(self.mask[2])
+
+		for m in self.mask:
+			self.screen.blit(m, (0,0))
 
 		pygame.display.flip()
+
+		posTuple = pygame.mouse.get_pos()
+		pos = [posTuple[0], posTuple[1]]
 
 		for event in pygame.event.get():
 			if event.type == pygame.QUIT:
 				running = False
 
+			if event.type == pygame.MOUSEBUTTONDOWN and pos[0]>300:
+				self.mouseDowned = True
+				self.buttonPressed = event.button
+
+
+			if event.type == pygame.MOUSEBUTTONUP:
+				self.mouseDowned = False
+				self.previousDownedPos = []
+
 			self.gui.event(event)
+
+		if self.mouseDowned and pos[0]>300 and pos!=self.previousDownedPos:
+			self.previousDownedPos = pos
+			if self.buttonPressed==1:
+				self.onMouseDownedMapFunc(pos)
+			elif self.buttonPressed==3:
+				self.onMouseDownedRightMapFunc(pos)
 
 		return running
 
