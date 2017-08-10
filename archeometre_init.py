@@ -22,10 +22,9 @@ def initArcheometre(self):
 	self.executeRequest("""
 	CREATE TABLE IF NOT EXISTS MapData(
 		id INTEGER PRIMARY KEY AUTOINCREMENT UNIQUE,
-		x INTEGER,
-		y INTEGER,
 		time INTEGER,
-		data TEXT
+		data TEXT,
+		mapId INTEGER
 	)
 	""")
 	self.executeRequest("""
@@ -41,9 +40,6 @@ def initArcheometre(self):
 	CREATE TABLE IF NOT EXISTS Nexus(
 		id INTEGER PRIMARY KEY AUTOINCREMENT UNIQUE,
 		mapId INTEGER,
-		startTime INTEGER,
-		peakTime INTEGER,
-		endTime INTEGER,
 		data TEXT
 	)
 	""")

@@ -3,6 +3,7 @@
 import pygame
 import math
 import os
+import numpy
 
 from pgu.pgu import gui as pgui
 
@@ -24,6 +25,7 @@ class Gui:
 		self.inpt = []
 		self.menu = []
 		self.label = []
+		self.progressbar = []
 
 		self.gui.init(self.layout)
 
@@ -35,7 +37,9 @@ class Gui:
 
 		self.mask = []
 		self.mask.append(pygame.surface.Surface(self.size, pygame.SRCALPHA)) #background image
+		self.mask.append(pygame.surface.Surface(self.size, pygame.SRCALPHA)) #simulation
 		self.mask.append(pygame.surface.Surface(self.size, pygame.SRCALPHA)) #attractor
+		self.mask.append(pygame.surface.Surface(self.size, pygame.SRCALPHA)) #nexus
 		self.mask.append(pygame.surface.Surface(self.size, pygame.SRCALPHA)) #gui
 
 		pygame.display.set_caption("Archeometre")
@@ -61,6 +65,15 @@ class Gui:
 	def fillRect(self, x, y, dx, dy, color, maskId=0):
 		self.mask[maskId].fill(color, pygame.Rect(x, y, dx, dy))
 
+	def fillCircle(self, x, y, r, color, maskId=0):
+		pygame.draw.circle(self.mask[maskId], color, (x, y), r, 0)
+
+	def paintArray(self, data, x, y, lx, ly, maskId=0):
+		self.fillRect(0, 0, 1300, 1000, (0,0,0,0.5), maskId)
+		for i in range(1000):
+			for j in range(1000):
+				val = max(0, min(255, round(data[i+x][j+y] * 25.5)))
+				self.drawPixel(i+300, j, (val, 255-val, 0), maskId)
 
 	def addButton(self, x, y, text, onClick=doNothing, paramOnClick=0):
 		self.btn.append(pgui.Button(text))
@@ -70,6 +83,13 @@ class Gui:
 		self.gui.init(self.layout)
 
 		return self.btn[-1]
+
+	def addProgressbar(self, x, y, s):
+		self.progressbar.append(pgui.slider.HSlider(value=0, min=0, max=100, size=s, width=260))
+		self.layout.add(self.progressbar[-1], x, y)
+		self.gui.init(self.layout)
+
+		return self.progressbar[-1]
 
 	def addSelect(self, x, y, data, onSelect=doNothing):
 		self.select.append(pgui.Select())
@@ -119,8 +139,8 @@ class Gui:
 	def update(self):
 		running = True
 
-		self.fillRect(0, 0, 300, 1000, (0,0,0), 2)
-		self.gui.paint(self.mask[2])
+		self.fillRect(0, 0, 300, 1000, (0,0,0), 4)
+		self.gui.paint(self.mask[4])
 
 		for m in self.mask:
 			self.screen.blit(m, (0,0))
