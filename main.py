@@ -4,8 +4,11 @@ from gui import *
 from archeometre import *
 import math
 
-gui = Gui(1300, 1000)
-archeometre = Archeometre()
+size = 1000
+sizeMenu = 300
+margin = 250
+gui = Gui(size, size, sizeMenu)
+archeometre = Archeometre(size, size, margin, margin)
 
 mapLoaded = False
 statusElem = 0
@@ -28,12 +31,14 @@ def resetNexusList():
 
 def loadMapOnClick(e):
 	global mapLoaded
+	global size
+	global sizeMenu
 	mapName = e.value
 	if mapName!=None and len(mapName)>0:
 		archeometre.loadMap(mapName)
 		mapProp = archeometre.getMapProp()
-		carte = pygame.transform.scale(pygame.image.load(os.path.join(mapProp["urlBackground"])), (1000, 1000))
-		gui.drawImage(carte, 300, 0)
+		carte = pygame.transform.scale(pygame.image.load(os.path.join(mapProp["urlBackground"])), (size, size))
+		gui.drawImage(carte, sizeMenu, 0)
 		mapLoaded = True
 		objInputMapUrl.value = mapProp["urlBackground"]
 		objInputpixUrl.value = mapProp["pixelSize"]
@@ -42,26 +47,30 @@ def loadMapOnClick(e):
 		resetNexusList()
 
 def deleteMapOnClick(e):
+	global size
+	global sizeMenu
 	mapName = e.value
 	if mapName!=None and len(mapName)>0:
 		archeometre.deleteMap(mapName)
-		gui.fillRect(300, 0, 1000, 1000, (0,0,0))
+		gui.fillRect(sizeMenu, 0, size, size, (0,0,0))
 		resetMapList()
 
 def createMapOnClick(e):
 	mapName = e.value
 	if mapName!=None and len(mapName)>0:
-		archeometre.createMap(mapName, "fond/default.png", 200000./1000., "")
+		archeometre.createMap(mapName, "fond/default.png", 1., "")
 		loadMapOnClick(e)
 		resetMapList()
 
 def setMapUrlOnClick(e):
+	global size
+	global sizeMenu
 	global mapLoaded
 	urlMap = e.value
 	if urlMap!=None and len(urlMap)>0 and mapLoaded:
 		archeometre.setMapUrl(urlMap)
-		carte = pygame.transform.scale(pygame.image.load(os.path.join(urlMap)), (1000, 1000))
-		gui.drawImage(carte, 300, 0)
+		carte = pygame.transform.scale(pygame.image.load(os.path.join(urlMap)), (size, size))
+		gui.drawImage(carte, sizeMenu, 0)
 
 def setPixelSamplingOnClick(e):
 	global mapLoaded
@@ -118,6 +127,8 @@ def onMouseDownedMap(pos):
 	global mapLoaded
 	global statusElem
 	global nexusId
+	global margin
+	global sizeMenu
 	if mapLoaded:
 		if statusElem==2:
 			data = []
@@ -125,7 +136,7 @@ def onMouseDownedMap(pos):
 				data.append([objIdElement[i], float(objInputElement[i].value)])
 			pos[0] = round(pos[0]/5.)*5
 			pos[1] = round(pos[1]/5.)*5
-			archeometre.addAttractor(data, pos[0], pos[1])
+			archeometre.addAttractor(data, pos[0]+margin-sizeMenu, pos[1]+margin)
 		if statusElem==3:
 			nexusName = str(objNexusNameElement.value)
 			nexusX = int(round(pos[0]/10.)*10)
@@ -134,17 +145,18 @@ def onMouseDownedMap(pos):
 			nexusPower = []
 			for i in range(len(objButtonElement)):
 				nexusPower.append([objIdElement[i], float(objInputElement[i].value)])
-			nexusId = archeometre.addNexus(nexusId, nexusName, nexusX, nexusY, nexusTime, nexusPower)
+			nexusId = archeometre.addNexus(nexusId, nexusName, nexusX+margin-sizeMenu, nexusY+margin, nexusTime, nexusPower)
 			resetNexusList()
 
 def onMouseDownedRightMap(pos):
 	global mapLoaded
 	global statusElem
+	global margin
 	if mapLoaded:
 		if statusElem==2:
 			pos[0] = round(pos[0]/5.)*5
 			pos[1] = round(pos[1]/5.)*5
-			archeometre.removeAttractor(pos[0], pos[1])
+			archeometre.removeAttractor(pos[0]+margin-sizeMenu, pos[1]+margin)
 
 def chooseNexusOnClick(e):
 	global mapLoaded
@@ -188,6 +200,9 @@ def onProgress(percent):
 	gui.update()
 
 def simulateOnClick(e):
+	global size
+	global sizeMenu
+	global margin
 	global mapLoaded
 	global simulationStep
 	global statusElem
@@ -197,20 +212,24 @@ def simulateOnClick(e):
 		simulationStep = int(e.value) + 1
 		objInputStep.value = str(simulationStep)
 		data = archeometre.simulate(simulationStep, onProgress)
-		gui.paintArray(data, 250, 250, 1500, 1500, 1)
+		gui.paintArray(data, margin, margin, size+2*margin, size+2*margin, 1)
 		statusElem = 0
 		objModeElement.value = "mode: None"
 
 def viewOnClick(e):
+	global size
+	global margin
 	global mapLoaded
 	global simulationStep
 	global statusElem
 	if mapLoaded and statusElem!=4:
 		stepVal = int(e.value)
 		data = archeometre.getStep(stepVal)
-		gui.paintArray(data, 250, 250, 1500, 1500, 1)
+		gui.paintArray(data, margin, margin, size+2*margin, size+2*margin, 1)
 
 def viewPlusOnClick(e):
+	global size
+	global margin
 	global mapLoaded
 	global simulationStep
 	global statusElem
@@ -219,7 +238,7 @@ def viewPlusOnClick(e):
 		stepVal += 1
 		e.value = stepVal
 		data = archeometre.getStep(stepVal)
-		gui.paintArray(data, 250, 250, 1500, 1500, 1)
+		gui.paintArray(data, margin, margin, size+2*margin, size+2*margin, 1)
 
 objSelectMap = gui.addSelect(10, 50, [])
 objButtonLoad = gui.addButton(10, 10, "Load map", loadMapOnClick, objSelectMap)
@@ -266,15 +285,15 @@ objIdElement = []
 
 elemList = archeometre.getElemList()
 for i in range(len(elemList)):
-	objInputElement.append(gui.addInput(80, 1000-40*(i+1), 5))
-	objButtonElement.append(gui.addButton(10, 1000-40*(i+1), elemList[i][1], validElem, [objInputElement[-1], elemList[i][0]]))
+	objInputElement.append(gui.addInput(80, size-40*(i+1), 5))
+	objButtonElement.append(gui.addButton(10, size-40*(i+1), elemList[i][1], validElem, [objInputElement[-1], elemList[i][0]]))
 	objIdElement.append(elemList[i][0])
 
-objNexusNameElement = gui.addInput(145, 1000-40*(len(elemList)+1), 14)
-objNexusDataElement = gui.addInput(145, 1000-40*(len(elemList)+2), 14)
-objNexusNameLabel = gui.addLabel(10, 1000-40*(len(elemList)+1), "Nexus Name: ")
-objNexusDataLabel = gui.addLabel(10, 1000-40*(len(elemList)+2), "Nexus times: ")
-objModeElement = gui.addLabel(10, 1000-40*(len(elemList)+3), "mode: None")
+objNexusNameElement = gui.addInput(145, size-40*(len(elemList)+1), 14)
+objNexusDataElement = gui.addInput(145, size-40*(len(elemList)+2), 14)
+objNexusNameLabel = gui.addLabel(10, size-40*(len(elemList)+1), "Nexus Name: ")
+objNexusDataLabel = gui.addLabel(10, size-40*(len(elemList)+2), "Nexus times: ")
+objModeElement = gui.addLabel(10, size-40*(len(elemList)+3), "mode: None")
 
 
 gui.onMouseDownedMap(onMouseDownedMap)
@@ -292,11 +311,11 @@ while(running):
 		r = math.floor((math.sin(t*w)+1)*64)
 		g = math.floor((math.sin(t*w+math.pi*2/3.)+1)*64)
 		b = math.floor((math.sin(t*w+math.pi*4/3.)+1)*64)
-		gui.fillRect(0, 0, 1300, 1000, (0,0,0,0), 2)
+		gui.fillRect(0, 0, size+sizeMenu, size, (0,0,0,0), 2)
 		for a in attractorList:
-			gui.fillRect(a[1]+300-3, a[2]-3, 5, 5, (r,g,b), 2)
+			gui.fillRect(a[1]-margin+sizeMenu-3, a[2]-margin+-3, 5, 5, (r,g,b), 2)
 
-		gui.fillRect(0, 0, 1300, 1000, (0,0,0,0), 3)
+		gui.fillRect(0, 0, size+sizeMenu, size, (0,0,0,0), 3)
 		if nexusId != -1:
 			nexusList = archeometre.getNexusList()
 			for n in nexusList:
@@ -305,7 +324,7 @@ while(running):
 					b = math.floor((math.sin(t*w)+1)*64)
 					g = math.floor((math.sin(t*w+math.pi*2/3.)+1)*64)
 					r = math.floor((math.sin(t*w+math.pi*4/3.)+1)*64)
-					gui.fillCircle(n[1][1], n[1][2], 5, (r,g,b), 3)
+					gui.fillCircle(n[1][1]-margin, n[1][2]-margin, 5, (r,g,b), 3)
 					break
 
 	running = gui.update()

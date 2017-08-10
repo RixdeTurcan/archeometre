@@ -11,14 +11,16 @@ def doNothing(val):
 	pass
 
 class Gui:
-	def __init__(self, x, y):
+	def __init__(self, x, y, menuX):
 		pygame.init()
 
 		self.size = [x, y]
-		self.screen = pygame.display.set_mode(self.size)
+		self.sizeTotal = [x+menuX, y]
+		self.menuSize = menuX
+		self.screen = pygame.display.set_mode(self.sizeTotal)
 
 		self.gui = pgui.App()
-		self.layout = pgui.Container(width=280, height=980, align=-1)
+		self.layout = pgui.Container(width=self.menuSize-20, height=self.size[1]-20, align=-1)
 
 		self.btn = []
 		self.select = []
@@ -36,11 +38,11 @@ class Gui:
 		self.buttonPressed = 1
 
 		self.mask = []
-		self.mask.append(pygame.surface.Surface(self.size, pygame.SRCALPHA)) #background image
-		self.mask.append(pygame.surface.Surface(self.size, pygame.SRCALPHA)) #simulation
-		self.mask.append(pygame.surface.Surface(self.size, pygame.SRCALPHA)) #attractor
-		self.mask.append(pygame.surface.Surface(self.size, pygame.SRCALPHA)) #nexus
-		self.mask.append(pygame.surface.Surface(self.size, pygame.SRCALPHA)) #gui
+		self.mask.append(pygame.surface.Surface(self.sizeTotal, pygame.SRCALPHA)) #background image
+		self.mask.append(pygame.surface.Surface(self.sizeTotal, pygame.SRCALPHA)) #simulation
+		self.mask.append(pygame.surface.Surface(self.sizeTotal, pygame.SRCALPHA)) #attractor
+		self.mask.append(pygame.surface.Surface(self.sizeTotal, pygame.SRCALPHA)) #nexus
+		self.mask.append(pygame.surface.Surface(self.sizeTotal, pygame.SRCALPHA)) #gui
 
 		pygame.display.set_caption("Archeometre")
 		self.screen.fill([0,0,0])
@@ -69,11 +71,11 @@ class Gui:
 		pygame.draw.circle(self.mask[maskId], color, (x, y), r, 0)
 
 	def paintArray(self, data, x, y, lx, ly, maskId=0):
-		self.fillRect(0, 0, 1300, 1000, (0,0,0,0.5), maskId)
-		for i in range(1000):
-			for j in range(1000):
+		self.fillRect(0, 0, self.size[0]+self.menuSize, self.size[1], (0,0,0,0.5), maskId)
+		for i in range(self.size[0]):
+			for j in range(self.size[1]):
 				val = max(0, min(255, round(data[i+x][j+y] * 25.5)))
-				self.drawPixel(i+300, j, (val, 255-val, 0), maskId)
+				self.drawPixel(i+self.menuSize, j, (val, 255-val, 0), maskId)
 
 	def addButton(self, x, y, text, onClick=doNothing, paramOnClick=0):
 		self.btn.append(pgui.Button(text))
@@ -85,7 +87,7 @@ class Gui:
 		return self.btn[-1]
 
 	def addProgressbar(self, x, y, s):
-		self.progressbar.append(pgui.slider.HSlider(value=0, min=0, max=100, size=s, width=260))
+		self.progressbar.append(pgui.slider.HSlider(value=0, min=0, max=100, size=s, width=self.menuSize-40))
 		self.layout.add(self.progressbar[-1], x, y)
 		self.gui.init(self.layout)
 
@@ -139,7 +141,7 @@ class Gui:
 	def update(self):
 		running = True
 
-		self.fillRect(0, 0, 300, 1000, (0,0,0), 4)
+		self.fillRect(0, 0, self.menuSize, self.size[1], (0,0,0), 4)
 		self.gui.paint(self.mask[4])
 
 		for m in self.mask:
@@ -154,7 +156,7 @@ class Gui:
 			if event.type == pygame.QUIT:
 				running = False
 
-			if event.type == pygame.MOUSEBUTTONDOWN and pos[0]>300:
+			if event.type == pygame.MOUSEBUTTONDOWN and pos[0]>self.menuSize:
 				self.mouseDowned = True
 				self.buttonPressed = event.button
 
@@ -165,7 +167,7 @@ class Gui:
 
 			self.gui.event(event)
 
-		if self.mouseDowned and pos[0]>300 and pos!=self.previousDownedPos:
+		if self.mouseDowned and pos[0]>self.menuSize and pos!=self.previousDownedPos:
 			self.previousDownedPos = pos
 			if self.buttonPressed==1:
 				self.onMouseDownedMapFunc(pos)

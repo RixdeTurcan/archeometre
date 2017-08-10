@@ -13,12 +13,17 @@ def doNothing(val):
 def sign(x): return 1 if x >= 0 else -1
 
 class Archeometre:
-	def __init__(self):
+	def __init__(self, sizeX, sizeY, marginX, marginY):
+		self.sizeX = sizeX
+		self.sizeY = sizeY
+		self.marginX = marginX
+		self.marginY = marginY
+
 		if not os.path.isfile("archeometre.db"):
 			self.db = sqlite3.connect("archeometre.db")
 
 			initArcheometre(self)
-			self.createMap("default", "fond/default.png", 20000./1000., "")
+			self.createMap("espagne_test", "fond/espagne_test.png", 1., "")
 		else:
 			self.db = sqlite3.connect("archeometre.db")
 
@@ -35,10 +40,10 @@ class Archeometre:
 			return cursor.fetchall()
 
 	def createMap(self, name, url, pixelSize, startDate):
-		sizeX = 250+1000+250
-		sizeY = 250+1000+250
-		posXView = 250
-		posYView = 250
+		sizeX = self.sizeX+2*self.marginX
+		sizeY = self.sizeY+2*self.marginY
+		posXView = self.marginX
+		posYView = self.marginY
 		viewtimes = "[]"
 		magicFieldInit = "[]"
 		self.executeRequest("""
@@ -105,8 +110,6 @@ class Archeometre:
 		""")
 
 	def addAttractor(self, data, x, y):
-		x += 250 - 300
-		y += 250
 		attractor = self.executeRequest("""
 		SELECT id FROM Attractor WHERE mapId="""+str(self.map["id"])+""" and x="""+str(x)+""" and y="""+str(y)+"""
 		""")
@@ -122,15 +125,13 @@ class Archeometre:
 			""")
 
 	def removeAttractor(self, x, y):
-		x += 250 - 300
-		y += 250
 		self.executeRequest("""
 		DELETE FROM Attractor
 		WHERE mapId="""+str(self.map["id"])+""" and x="""+str(x)+""" and y="""+str(y)+"""
 		""")
 
 	def addNexus(self, nexusId, nexusName, nexusX, nexusY, nexusTime, nexusPower):
-		data = [nexusName, nexusX+250, nexusY+250, json.loads(nexusTime), nexusPower]
+		data = [nexusName, nexusX, nexusY, json.loads(nexusTime), nexusPower]
 		if nexusId == -1:
 			self.executeRequest("""
 			INSERT INTO Nexus(mapId, data)
@@ -160,7 +161,7 @@ class Archeometre:
 		""")
 		elemList = []
 		for m in elem:
-			elemList.append([json.loads(m[0]), m[1]-250, m[2]-250])
+			elemList.append([json.loads(m[0]), m[1], m[2]])
 
 		return elemList
 
@@ -172,8 +173,6 @@ class Archeometre:
 		elemList = []
 		for m in elem:
 			data = json.loads(m[1])
-			data[1] -= 250
-			data[2] -= 250
 			elemList.append([m[0], data])
 
 		return elemList
@@ -209,8 +208,8 @@ class Archeometre:
 			return data
 
 	def simulate(self, timeStep = 1, onProgressfunc=doNothing):
-		lx = 1500
-		ly = 1500
+		lx = self.sizeX+self.marginX
+		ly = self.sizeY+self.marginY
 
 		data = None
 		if timeStep==1:
@@ -235,12 +234,14 @@ class Archeometre:
 		[2.5, 4.0, 2.5],
 		[2.0, 2.5, 2.0]
 		] #eau
+		spreadMatSize = len(spreadMat)
+		spreadMatMid = (spreadMatSize-1)/2
 		sumSpread = 0.
-		for x in range(3):
-			for y in range(3):
+		for x in range(spreadMatSize):
+			for y in range(spreadMatSize):
 				sumSpread += spreadMat[x][y]
-		for x in range(3):
-			for y in range(3):
+		for x in range(spreadMatSize):
+			for y in range(spreadMatSize):
 				spreadMat[x][y] /= sumSpread
 
 		print spreadMat
@@ -271,16 +272,16 @@ class Archeometre:
 				dxi = int(math.floor(dx))
 				dyi = int(math.floor(dy))
 
-				for j in range(3):
-					for k in range(3):
+				for j in range(spreadMatSize):
+					for k in range(spreadMatSize):
 						val2 = round(val*spreadMat[j][k], 3)
 
 						factorX = dx-dxi
 						factorY = dy-dyi
 						for l in range(2):
 							for m in range(2):
-								x2 = (x+dxi+j+l-1)%lx
-								y2 = (y+dyi+k+m-1)%ly
+								x2 = (x+dxi+j+l-spreadMatMid)%lx
+								y2 = (y+dyi+k+m-spreadMatMid)%ly
 								factor = (1.-abs(l-factorX)) * (1.-abs(m-factorY))
 
 								data2[x2][y2] += val2*factor
