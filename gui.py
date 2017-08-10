@@ -70,12 +70,14 @@ class Gui:
 	def fillCircle(self, x, y, r, color, maskId=0):
 		pygame.draw.circle(self.mask[maskId], color, (x, y), r, 0)
 
-	def paintArray(self, data, x, y, lx, ly, maskId=0):
+	def paintArray(self, data, x, y, ss, maskId=0):
 		self.fillRect(0, 0, self.size[0]+self.menuSize, self.size[1], (0,0,0,0.5), maskId)
-		for i in range(self.size[0]):
-			for j in range(self.size[1]):
+		lx = self.size[0]/ss
+		ly = self.size[1]/ss
+		for i in range(lx):
+			for j in range(ly):
 				val = max(0, min(255, round(data[i+x][j+y] * 25.5)))
-				self.drawPixel(i+self.menuSize, j, (val, 255-val, 0), maskId)
+				self.fillRect(i*ss+self.menuSize, j*ss, ss, ss, (val, 255-val, 25), maskId)
 
 	def addButton(self, x, y, text, onClick=doNothing, paramOnClick=0):
 		self.btn.append(pgui.Button(text))

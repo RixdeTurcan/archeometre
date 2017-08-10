@@ -13,11 +13,12 @@ def doNothing(val):
 def sign(x): return 1 if x >= 0 else -1
 
 class Archeometre:
-	def __init__(self, sizeX, sizeY, marginX, marginY):
+	def __init__(self, sizeX, sizeY, marginX, marginY, subSampling):
 		self.sizeX = sizeX
 		self.sizeY = sizeY
 		self.marginX = marginX
 		self.marginY = marginY
+		self.subSampling = subSampling
 
 		if not os.path.isfile("archeometre.db"):
 			self.db = sqlite3.connect("archeometre.db")
@@ -204,12 +205,15 @@ class Archeometre:
 			mapData = self.executeRequest("""
 			SELECT data FROM MapData WHERE mapId="""+str(self.map["id"])+""" and time="""+str(timeStep)+"""
 			""")
-			data = json.loads(mapData[0][0])
-			return data
+			if len(mapData)>0:
+				data = json.loads(mapData[0][0])
+				return data
+			else:
+				return None
 
 	def simulate(self, timeStep = 1, onProgressfunc=doNothing):
-		lx = self.sizeX+self.marginX
-		ly = self.sizeY+self.marginY
+		lx = self.sizeX+2*self.marginX
+		ly = self.sizeY+2*self.marginY
 
 		data = None
 		if timeStep==1:
@@ -231,7 +235,7 @@ class Archeometre:
 
 		spreadMat = [
 		[2.0, 2.5, 2.0],
-		[2.5, 4.0, 2.5],
+		[2.5, 3.0, 2.5],
 		[2.0, 2.5, 2.0]
 		] #eau
 		spreadMatSize = len(spreadMat)
@@ -244,48 +248,73 @@ class Archeometre:
 			for y in range(spreadMatSize):
 				spreadMat[x][y] /= sumSpread
 
-		print spreadMat
 		attractorList = self.getAttractorList()
+		nexusList = self.getNexusList()
+
 
 		for x in range(lx):
-			if x%10==0:
-				onProgressfunc(round(x/1500.*100., 1))
+			if x%2==0:
+				onProgressfunc(round(100.*x/float(lx), 1))
 
 			for y in range(ly):
 				val = data[x][y]
 				dx = 0
 				dy = 0
-
 				for a in attractorList:
 					p = a[0][3][1] #eau
 
-					rx = (a[1]+250)-x
-					ry = (a[2]+250)-y
-					r = math.sqrt(rx*rx+ry*ry)/600.
-					alpha = math.atan2(ry, rx)
+					rx = a[1]-x
+					ry = a[2]-y
+					r = math.sqrt(rx*rx+ry*ry)*self.subSampling/600.
+					alpha = math.atan2(ry, rx) + (random.random()*2.-1.)*0.5
 
-					a = max(4.*(r-r*r)*2.-1., 0.)*p*0.5/max(10., pow(val/3., 0.5))
+					a = max(4.*(r-r*r)*2.-1., 0.)*p*0.05/max(1., pow(val/3., 1.)) #TODO BUG
 
 					dx += a*math.cos(alpha)
 					dy += a*math.sin(alpha)
+
+				for n in nexusList:
+					timings = n[1][3]
+					if timeStep>=timings[0] and timeStep<timings[2]:
+						rx = n[1][1]-x
+						ry = n[1][2]-y
+						p = n[1][4][3][1] #eau
+
+						r = max(1., math.sqrt(rx*rx+ry*ry))*self.subSampling/600.
+						alpha = math.atan2(ry, rx) + (random.random()*2.-1.)*0.5
+
+						factor = (timeStep-timings[0])/float(timings[1]-timings[0])
+						if timeStep>timings[1]:
+							factor = -(timings[2]-timeStep)/float(timings[2]-timings[1])
+						a = min(max(4.*factor*p*(r-r*r), -10.), 10.)
+
+						dx += a*math.cos(alpha)
+						dy += a*math.sin(alpha)
 
 				dxi = int(math.floor(dx))
 				dyi = int(math.floor(dy))
 
 				for j in range(spreadMatSize):
 					for k in range(spreadMatSize):
-						val2 = round(val*spreadMat[j][k], 3)
+						val2 = val*spreadMat[j][k]
 
 						factorX = dx-dxi
 						factorY = dy-dyi
 						for l in range(2):
 							for m in range(2):
-								x2 = (x+dxi+j+l-spreadMatMid)%lx
-								y2 = (y+dyi+k+m-spreadMatMid)%ly
-								factor = (1.-abs(l-factorX)) * (1.-abs(m-factorY))
+								x2 = x+dxi+j+l-spreadMatMid
+								y2 = y+dyi+k+m-spreadMatMid
+								if x2>=0 and y2>=0 and x2<lx and y2<ly:
+									factor = (1.-abs(l-factorX)) * (1.-abs(m-factorY))
+									data2[x2][y2] += val2*factor
 
-								data2[x2][y2] += val2*factor
-
+		for x in range(lx):
+			for y in range(ly):
+				if data2[x][y]<1.:
+					data2[x][y] += random.random()*0.1
+				if data2[x][y]>6.:
+					data2[x][y] -= random.random()*0.1
+				data2[x][y] = round(data2[x][y], 3)
 
 
 		mapData = self.executeRequest("""
