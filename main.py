@@ -7,7 +7,7 @@ import math
 size = 1024
 sizeMenu = 300
 margin = 256
-subSampling = 4
+subSampling = 8
 gui = Gui(size, size, sizeMenu)
 archeometre = Archeometre(size/subSampling, size/subSampling, margin/subSampling, margin/subSampling, subSampling)
 

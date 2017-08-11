@@ -265,10 +265,11 @@ class Archeometre:
 
 					rx = a[1]-x
 					ry = a[2]-y
-					r = math.sqrt(rx*rx+ry*ry)*self.subSampling/600.
-					alpha = math.atan2(ry, rx) + (random.random()*2.-1.)*0.5
+					r = math.sqrt(rx*rx+ry*ry) + 80./self.subSampling
+					r = r*self.subSampling/600.
+					alpha = math.atan2(ry, rx) + (random.random()*2.-1.)*0.8
 
-					a = max(4.*(r-r*r)*2.-1., 0.)*p*0.05/max(1., pow(val/3., 1.)) #TODO BUG
+					a = max(4.*(r-r*r)*2.-1., 0.)*p*0.05/max(1., pow(val/3., 1.))
 
 					dx += a*math.cos(alpha)
 					dy += a*math.sin(alpha)
@@ -281,7 +282,7 @@ class Archeometre:
 						p = n[1][4][3][1] #eau
 
 						r = max(1., math.sqrt(rx*rx+ry*ry))*self.subSampling/600.
-						alpha = math.atan2(ry, rx) + (random.random()*2.-1.)*0.5
+						alpha = math.atan2(ry, rx) + (random.random()*2.-1.)*0.2
 
 						factor = (timeStep-timings[0])/float(timings[1]-timings[0])
 						if timeStep>timings[1]:
@@ -313,7 +314,7 @@ class Archeometre:
 				if data2[x][y]<1.:
 					data2[x][y] += random.random()*0.1
 				if data2[x][y]>6.:
-					data2[x][y] -= random.random()*0.1
+					data2[x][y] -= random.random()*0.2*(data2[x][y]-6.)
 				data2[x][y] = round(data2[x][y], 3)
 
 
