@@ -31,6 +31,13 @@ def resetNexusList():
 		dataSelect.append([str(n[1][0]), n[0]])
 	gui.resetSelect(objSelectNexus, dataSelect)
 
+def resetElementList():
+	dataSelect = []
+	elemList = archeometre.getElemList()
+	for n in elemList:
+		dataSelect.append([str(n[1]), n[0]])
+	gui.resetSelect(objSelectElem, dataSelect)
+
 def loadMapOnClick(e):
 	global mapLoaded
 	global size
@@ -203,6 +210,12 @@ def onProgress(percent):
 	objProgressBar.value = percent
 	gui.update()
 
+def onFinal(data):
+	global statusElem
+	gui.paintArray(data, margin/subSampling, margin/subSampling, subSampling, 1)
+	statusElem = 0
+	objModeElement.value = "mode: None"
+
 def simulateOnClick(e):
 	global size
 	global sizeMenu
@@ -216,10 +229,8 @@ def simulateOnClick(e):
 		objModeElement.value = "mode: Simulating"
 		simulationStep = int(e.value) + 1
 		objInputStep.value = str(simulationStep)
-		data = archeometre.simulate(simulationStep, onProgress)
-		gui.paintArray(data, margin/subSampling, margin/subSampling, subSampling, 1)
-		statusElem = 0
-		objModeElement.value = "mode: None"
+		elemId = int(objSelectElem.value)
+		archeometre.simulate(elemId, simulationStep, onProgress, onFinal)
 
 def autoStepOnClick(e):
 	global mapLoaded
@@ -247,7 +258,8 @@ def viewOnClick(e):
 	global autoSteprunning
 	if mapLoaded and statusElem!=4:
 		stepVal = int(e.value)
-		data = archeometre.getStep(stepVal)
+		elemId = int(objSelectElem.value)
+		data = archeometre.getStep(stepVal, elemId)
 		if data!=None:
 			gui.paintArray(data, margin/subSampling, margin/subSampling, subSampling, 1)
 			gui.update()
@@ -314,6 +326,9 @@ objInputViewStep = gui.addInput(130, 630, 5)
 objView = gui.addButton(10, 630, "View step: ", viewOnClick, objInputViewStep)
 objPlusView = gui.addButton(200, 630, "auto view", viewPlusOnClick, objInputViewStep)
 
+objSelectElem = gui.addSelect(120, 670, [])
+objElemLabel = gui.addLabel(10, 670, "Element: ")
+
 objInputViewStep.value = "1"
 
 objButtonElement = []
@@ -326,6 +341,7 @@ for i in range(len(elemList)):
 	objButtonElement.append(gui.addButton(10, size-40*(i+1), elemList[i][1], validElem, [objInputElement[-1], elemList[i][0]]))
 	objIdElement.append(elemList[i][0])
 
+
 objNexusNameElement = gui.addInput(145, size-40*(len(elemList)+1), 14)
 objNexusDataElement = gui.addInput(145, size-40*(len(elemList)+2), 14)
 objNexusNameLabel = gui.addLabel(10, size-40*(len(elemList)+1), "Nexus Name: ")
@@ -336,7 +352,7 @@ objModeElement = gui.addLabel(10, size-40*(len(elemList)+3), "mode: None")
 gui.onMouseDownedMap(onMouseDownedMap)
 gui.onMouseDownedRightMap(onMouseDownedRightMap)
 resetMapList()
-
+resetElementList()
 
 t = 0
 running = True
@@ -345,11 +361,14 @@ while(running):
 	if mapLoaded:
 		attractorList = archeometre.getAttractorList()
 		w = 0.1
-		r = math.floor((math.sin(t*w)+1)*64)
-		g = math.floor((math.sin(t*w+math.pi*2/3.)+1)*64)
-		b = math.floor((math.sin(t*w+math.pi*4/3.)+1)*64)
 		gui.fillRect(0, 0, size+sizeMenu, size, (0,0,0,0), 2)
 		for a in attractorList:
+			dt = 0
+			for iE in range(len(a[0])):
+				dt += iE*a[0][iE][1]
+			r = math.floor((math.sin((t+dt)*w)+1)*64)
+			g = math.floor((math.sin((t+dt)*w+math.pi*2/3.)+1)*64)
+			b = math.floor((math.sin((t+dt)*w+math.pi*4/3.)+1)*64)
 			midPoint = (5*subSampling)/2
 			gui.fillRect((a[1])*subSampling-margin+sizeMenu-midPoint, (a[2])*subSampling-margin-midPoint, 5*subSampling, 5*subSampling, (r,g,b), 2)
 

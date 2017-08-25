@@ -24,7 +24,8 @@ def initArcheometre(self):
 		id INTEGER PRIMARY KEY AUTOINCREMENT UNIQUE,
 		time INTEGER,
 		data TEXT,
-		mapId INTEGER
+		mapId INTEGER,
+		elemId INTEGER
 	)
 	""")
 	self.executeRequest("""

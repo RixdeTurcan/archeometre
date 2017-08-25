@@ -3,9 +3,9 @@
 import sqlite3
 import os.path
 from archeometre_init import *
+from archeometre_simulation import *
+from archeometre_data import *
 import json
-import random
-import math
 
 def doNothing(val):
 	pass
@@ -33,10 +33,12 @@ class Archeometre:
 	def __del__(self):
 		self.db.close()
 
-	def executeRequest(self, request):
-		cursor = self.db.cursor()
+	def executeRequest(self, request, db=None):
+		if db==None:
+			db = self.db
+		cursor = db.cursor()
 		cursor.execute(request)
-		self.db.commit()
+		db.commit()
 		if request.find("SELECT")!=-1:
 			return cursor.fetchall()
 
@@ -201,9 +203,9 @@ class Archeometre:
 	def getMapProp(self):
 		return self.map
 
-	def getStep(self, timeStep):
+	def getStep(self, timeStep, elemId):
 			mapData = self.executeRequest("""
-			SELECT data FROM MapData WHERE mapId="""+str(self.map["id"])+""" and time="""+str(timeStep)+"""
+			SELECT data FROM MapData WHERE mapId="""+str(self.map["id"])+""" and time="""+str(timeStep)+""" and elemId="""+str(elemId)+"""
 			""")
 			if len(mapData)>0:
 				data = json.loads(mapData[0][0])
@@ -211,132 +213,68 @@ class Archeometre:
 			else:
 				return None
 
-	def simulate(self, timeStep = 1, onProgressfunc=doNothing):
-		lx = self.sizeX+2*self.marginX
-		ly = self.sizeY+2*self.marginY
-
-		data = None
-		if timeStep==1:
-			valInit = self.map["magicFieldInit"][1][1] #eau
-			data = [None]*lx
-			for x in range(len(data)):
-				data[x] = [valInit]*ly
-		else:
-			mapData = self.executeRequest("""
-			SELECT data FROM MapData WHERE mapId="""+str(self.map["id"])+""" and time="""+str(timeStep-1)+"""
-			""")
-			data = json.loads(mapData[0][0])
-
-
-		data2 = [None]*lx
-		for x in range(len(data)):
-			data2[x] = [0.]*ly
-
-
-		spreadMat = [
-		[2.0, 2.5, 2.0],
-		[2.5, 3.0, 2.5],
-		[2.0, 2.5, 2.0]
-		] #eau
-		spreadMatSize = len(spreadMat)
-		spreadMatMid = (spreadMatSize-1)/2
-		sumSpread = 0.
-		for x in range(spreadMatSize):
-			for y in range(spreadMatSize):
-				sumSpread += spreadMat[x][y]
-		for x in range(spreadMatSize):
-			for y in range(spreadMatSize):
-				spreadMat[x][y] /= sumSpread
+	def simulate(self, elemId, timeStep = 1, onProgressfunc=doNothing, onFinalfunc=doNothing):
 
 		attractorList = self.getAttractorList()
 		nexusList = self.getNexusList()
+		elemList = self.getElemList()
 
+		for i in range(len(elemList)):
+			if elemList[i][0] != elemId:
+				continue
 
-		for x in range(lx):
-			if x%2==0:
-				onProgressfunc(round(100.*x/float(lx), 1))
+			lx = self.sizeX+2*self.marginX
+			ly = self.sizeY+2*self.marginY
 
-			for y in range(ly):
-				val = data[x][y]
-				dx = 0
-				dy = 0
-				for a in attractorList:
-					p = a[0][3][1] #eau
+			data = None
+			if timeStep==1:
+				mgi = 0
+				while self.map["magicFieldInit"][mgi][0] != elemList[i][0]:
+					mgi += 1
+				valInit = self.map["magicFieldInit"][mgi][1]
 
-					rx = a[1]-x
-					ry = a[2]-y
-					r = math.sqrt(rx*rx+ry*ry) + 80./self.subSampling
-					r = r*self.subSampling/600.
-					alpha = math.atan2(ry, rx) + (random.random()*2.-1.)*0.8
+				data = [None]*lx
+				for x in range(len(data)):
+					data[x] = [valInit]*ly
+			else:
+				mapData = self.executeRequest("""
+				SELECT data FROM MapData WHERE mapId="""+str(self.map["id"])+""" and time="""+str(timeStep-1)+""" and elemId="""+str(elemList[i][0])+"""
+				""")
+				data = json.loads(mapData[0][0])
 
-					a = max(4.*(r-r*r)*2.-1., 0.)*p*0.05/max(1., pow(val/3., 1.))
+			dataInput = []
+			dataInput.append(self.sizeX)
+			dataInput.append(self.sizeY)
+			dataInput.append(self.marginX)
+			dataInput.append(self.marginY)
+			dataInput.append(timeStep)
+			dataInput.append(data)
+			dataInput.append(attractorList)
+			dataInput.append(nexusList)
+			dataInput.append(self.subSampling)
+			dataInput.append(getElementData(elemList[i][1]))
+			dataInput.append(elemList[i][0])
 
-					dx += a*math.cos(alpha)
-					dy += a*math.sin(alpha)
+			data = simulateArcheometre(onProgressfunc, dataInput)
 
-				for n in nexusList:
-					timings = n[1][3]
-					if timeStep>=timings[0] and timeStep<timings[2]:
-						rx = n[1][1]-x
-						ry = n[1][2]-y
-						p = n[1][4][3][1] #eau
-
-						r = max(1., math.sqrt(rx*rx+ry*ry))*self.subSampling/600.
-						alpha = math.atan2(ry, rx) + (random.random()*2.-1.)*0.2
-
-						factor = (timeStep-timings[0])/float(timings[1]-timings[0])
-						if timeStep>timings[1]:
-							factor = -(timings[2]-timeStep)/float(timings[2]-timings[1])
-						a = min(max(4.*factor*p*(r-r*r), -10.), 10.)
-
-						dx += a*math.cos(alpha)
-						dy += a*math.sin(alpha)
-
-				dxi = int(math.floor(dx))
-				dyi = int(math.floor(dy))
-
-				for j in range(spreadMatSize):
-					for k in range(spreadMatSize):
-						val2 = val*spreadMat[j][k]
-
-						factorX = dx-dxi
-						factorY = dy-dyi
-						for l in range(2):
-							for m in range(2):
-								x2 = x+dxi+j+l-spreadMatMid
-								y2 = y+dyi+k+m-spreadMatMid
-								if x2>=0 and y2>=0 and x2<lx and y2<ly:
-									factor = (1.-abs(l-factorX)) * (1.-abs(m-factorY))
-									data2[x2][y2] += val2*factor
-
-		for x in range(lx):
-			for y in range(ly):
-				if data2[x][y]<1.:
-					data2[x][y] += random.random()*0.1
-				if data2[x][y]>6.:
-					data2[x][y] -= random.random()*0.2*(data2[x][y]-6.)
-				data2[x][y] = round(data2[x][y], 3)
-
-
-		mapData = self.executeRequest("""
-		SELECT id FROM MapData WHERE mapId="""+str(self.map["id"])+""" and time="""+str(timeStep)+"""
-		""")
-
-		if len(mapData)==0:
-			self.executeRequest("""
-			INSERT INTO MapData(time, data, mapId)
-			VALUES("""+str(timeStep)+""", '"""+json.dumps(data2)+"""', """+str(self.map["id"])+""")
-			""")
-		else:
-			self.executeRequest("""
-			UPDATE MapData SET data='"""+json.dumps(data2)+"""' WHERE id="""+str(mapData[0][0])+"""
+			mapData = self.executeRequest("""
+			SELECT id FROM MapData WHERE mapId="""+str(self.map["id"])+""" and time="""+str(data[2])+""" and elemId="""+str(data[1])+"""
 			""")
 
-		onProgressfunc(0.0)
+			if len(mapData)==0:
+				self.executeRequest("""
+				INSERT INTO MapData(time, data, mapId, elemId)
+				VALUES("""+str(data[2])+""", '"""+json.dumps(data[0])+"""', """+str(self.map["id"])+""", '"""+str(data[1])+"""')
+				""")
+			else:
+				self.executeRequest("""
+				UPDATE MapData SET data='"""+json.dumps(data[0])+"""' WHERE id="""+str(mapData[0][0])+""" and elemId="""+str(data[1])+"""
+				""")
 
-		return data2
+			onProgressfunc(0.0)
 
-
+			onFinalfunc(data[0])
+			break
 
 
 
