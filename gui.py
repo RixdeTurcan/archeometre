@@ -70,14 +70,18 @@ class Gui:
 	def fillCircle(self, x, y, r, color, maskId=0):
 		pygame.draw.circle(self.mask[maskId], color, (x, y), r, 0)
 
-	def paintArray(self, data, x, y, ss, maskId=0):
+	def paintArray(self, data, x, y, ss, maskId=0, arrayMin=0., arrayMax=10., transparency=255):
 		self.fillRect(0, 0, self.size[0]+self.menuSize, self.size[1], (0,0,0,0.5), maskId)
 		lx = self.size[0]/ss
 		ly = self.size[1]/ss
 		for i in range(lx):
 			for j in range(ly):
-				val = max(0, min(255, round(data[i+x][j+y] * 25.5)))
-				self.fillRect(i*ss+self.menuSize, j*ss, ss, ss, (val, 255-val, 25), maskId)
+				val = max(0, min(255, round(255.*(data[i+x][j+y]-arrayMin)/(arrayMax-arrayMin))))
+				self.fillRect(i*ss+self.menuSize, j*ss, ss, ss, (val, 255-val, 25, transparency), maskId)
+
+	def setMaskTransparency(self, transparency, maskId):
+		self.mask[maskId].fill((255,255,255,0), pygame.Rect(self.menuSize, 0, self.size[0], self.size[1]), pygame.BLEND_RGBA_MIN)
+		self.mask[maskId].fill((0,0,0,transparency), pygame.Rect(self.menuSize, 0, self.size[0], self.size[1]), pygame.BLEND_RGBA_MAX)
 
 	def addButton(self, x, y, text, onClick=doNothing, paramOnClick=0):
 		self.btn.append(pgui.Button(text))
@@ -88,8 +92,11 @@ class Gui:
 
 		return self.btn[-1]
 
-	def addProgressbar(self, x, y, s):
+	def addProgressbar(self, x, y, s, onChange=doNothing):
 		self.progressbar.append(pgui.slider.HSlider(value=0, min=0, max=100, size=s, width=self.menuSize-40))
+
+		self.progressbar[-1].connect(pgui.CHANGE, onChange, self.progressbar[-1])
+
 		self.layout.add(self.progressbar[-1], x, y)
 		self.gui.init(self.layout)
 
