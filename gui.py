@@ -11,11 +11,16 @@ def doNothing(val):
 	pass
 
 class Gui:
-	def __init__(self, x, y, menuX):
+	def __init__(self, x, y, menuX, xScreen=None, yScreen=None):
 		pygame.init()
 
 		self.size = [x, y]
-		self.sizeTotal = [x+menuX, y]
+		self.sizeScreen = [xScreen, yScreen]
+		if xScreen==None:
+			self.sizeScreen = [x, y]
+		
+		self.sizeTotal = [self.sizeScreen[0]+menuX, self.sizeScreen[1]]
+		self.sizeTotal2 = [self.size[0]+menuX, self.size[1]]
 		self.menuSize = menuX
 		self.screen = pygame.display.set_mode(self.sizeTotal)
 
@@ -33,21 +38,29 @@ class Gui:
 
 		self.onMouseDownedMapFunc = doNothing
 		self.onMouseDownedRightMapFunc = doNothing
+		self.onMouseScrolldownfunc = doNothing
+		self.onMouseScrollupfunc = doNothing
 		self.mouseDowned = False
 		self.previousDownedPos = []
 		self.buttonPressed = 1
 
 		self.mask = []
-		self.mask.append(pygame.surface.Surface(self.sizeTotal, pygame.SRCALPHA)) #background image
-		self.mask.append(pygame.surface.Surface(self.sizeTotal, pygame.SRCALPHA)) #simulation
-		self.mask.append(pygame.surface.Surface(self.sizeTotal, pygame.SRCALPHA)) #attractor
-		self.mask.append(pygame.surface.Surface(self.sizeTotal, pygame.SRCALPHA)) #nexus
-		self.mask.append(pygame.surface.Surface(self.sizeTotal, pygame.SRCALPHA)) #gui
+		self.mask.append(pygame.surface.Surface(self.sizeTotal2, pygame.SRCALPHA)) #background image
+		self.mask.append(pygame.surface.Surface(self.sizeTotal2, pygame.SRCALPHA)) #simulation
+		self.mask.append(pygame.surface.Surface(self.sizeTotal2, pygame.SRCALPHA)) #attractor
+		self.mask.append(pygame.surface.Surface(self.sizeTotal2, pygame.SRCALPHA)) #nexus
+		self.mask.append(pygame.surface.Surface(self.sizeTotal2, pygame.SRCALPHA)) #gui
 
 		pygame.display.set_caption("Archeometre")
 		self.screen.fill([0,0,0])
 		pygame.display.flip()
 
+	def onMouseScrolldown(self, func):
+		self.onMouseScrolldownfunc = func
+		
+	def onMouseScrollup(self, func):
+		self.onMouseScrollupfunc = func
+		
 	def onMouseDownedMap(self, func):
 		self.onMouseDownedMapFunc = func
 
@@ -71,14 +84,17 @@ class Gui:
 		pygame.draw.circle(self.mask[maskId], color, (x, y), r, 0)
 
 	def paintArray(self, data, x, y, ss, maskId=0, arrayMin=0., arrayMax=10., transparency=255):
-		self.fillRect(0, 0, self.size[0]+self.menuSize, self.size[1], (0,0,0,0.5), maskId)
+		surf = pygame.surface.Surface(self.size, pygame.SRCALPHA)
 		lx = self.size[0]/ss
 		ly = self.size[1]/ss
 		for i in range(lx):
 			for j in range(ly):
 				val = max(0, min(255, round(255.*(data[i+x][j+y]-arrayMin)/(arrayMax-arrayMin))))
-				self.fillRect(i*ss+self.menuSize, j*ss, ss, ss, (val, 255-val, 25, transparency), maskId)
-
+				surf.fill((val, 255-val, 25, transparency), pygame.Rect(i*ss, j*ss, ss, ss))
+		surf = pygame.transform.smoothscale(surf, (self.sizeScreen[0], self.sizeScreen[1]))
+		self.fillRect(0, 0, self.size[0]+self.menuSize, self.size[1], (0, 0, 0, 0), maskId)
+		self.drawImage(surf, self.menuSize, 0, maskId)
+		
 	def setMaskTransparency(self, transparency, maskId):
 		self.mask[maskId].fill((255,255,255,0), pygame.Rect(self.menuSize, 0, self.size[0], self.size[1]), pygame.BLEND_RGBA_MIN)
 		self.mask[maskId].fill((0,0,0,transparency), pygame.Rect(self.menuSize, 0, self.size[0], self.size[1]), pygame.BLEND_RGBA_MAX)
@@ -169,6 +185,11 @@ class Gui:
 				self.mouseDowned = True
 				self.buttonPressed = event.button
 
+			if event.type == pygame.MOUSEBUTTONDOWN:
+				if event.button==4:
+					self.onMouseScrolldownfunc(pos)
+				elif event.button==5:
+					self.onMouseScrollupfunc(pos)
 
 			if event.type == pygame.MOUSEBUTTONUP:
 				self.mouseDowned = False
